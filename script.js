@@ -221,47 +221,49 @@ if (prefersReduced) {
   /* ---------- video: scroll-reveal + one-time autoplay ---------- */
   gsap.from("[data-video]", {
     y: 60, autoAlpha: 0, duration: 0.9, ease: "power3.out",
-    scrollTrigger: { trigger: ".video-frame", start: "top 85%" },
+    scrollTrigger: { trigger: ".video-frame", start: "top 90%" },
   });
 
   const videoEl = document.querySelector(".video-el");
   if (videoEl) {
     let hasAutoplayed = false;
 
-    ScrollTrigger.create({
-      trigger: ".video-frame",
-      start: "top 80%",   // fires when video frame is 80% into viewport
-      onEnter: () => {
-        if (hasAutoplayed) return;
-        hasAutoplayed = true;
+    function tryAutoplay() {
+      if (hasAutoplayed) return;
+      hasAutoplayed = true;
 
-        // attempt play with sound first (works if user has interacted with page)
-        videoEl.muted = false;
-        const playPromise = videoEl.play();
+      // attempt unmuted play — works once user has interacted with the page
+      videoEl.muted = false;
+      const p = videoEl.play();
 
-        if (playPromise !== undefined) {
-          playPromise.catch(() => {
-            // browser blocked unmuted autoplay — fall back to muted,
-            // then unmute as soon as the user taps/clicks anywhere once
-            videoEl.muted = true;
-            videoEl.play().catch(() => {});
+      if (p !== undefined) {
+        p.catch(() => {
+          // browser blocked unmuted — fall back to muted autoplay
+          videoEl.muted = true;
+          videoEl.play().catch(() => {});
 
-            const unmute = () => {
-              videoEl.muted = false;
-              document.removeEventListener("click",  unmute);
-              document.removeEventListener("touchstart", unmute);
-            };
-            document.addEventListener("click",      unmute, { once: true });
-            document.addEventListener("touchstart", unmute, { once: true });
-          });
-        }
+          // unmute on next interaction
+          document.addEventListener("click",      () => { videoEl.muted = false; }, { once: true });
+          document.addEventListener("touchstart", () => { videoEl.muted = false; }, { once: true });
+        });
+      }
+    }
 
-        // after the first full play-through, leave controls to the user
-        videoEl.addEventListener("ended", () => {
-          videoEl.controls = true;
-        }, { once: true });
+    // Use IntersectionObserver as the trigger — it fires based on actual
+    // DOM visibility, not scroll-position math, so it's immune to the
+    // distortion caused by the pinned heal section above.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            tryAutoplay();
+            observer.disconnect(); // one-shot
+          }
+        });
       },
-    });
+      { threshold: 0.4 } // fire when 40% of the video frame is visible
+    );
+    observer.observe(document.querySelector(".video-frame"));
   }
 }
 
