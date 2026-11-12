@@ -218,53 +218,11 @@ if (prefersReduced) {
     scrollTrigger: { trigger: ".founder-list", start: "top 82%" },
   });
 
-  /* ---------- video: scroll-reveal + one-time autoplay ---------- */
+  /* ---------- video: scroll-reveal ---------- */
   gsap.from("[data-video]", {
     y: 60, autoAlpha: 0, duration: 0.9, ease: "power3.out",
     scrollTrigger: { trigger: ".video-frame", start: "top 90%" },
   });
-
-  const videoEl = document.querySelector(".video-el");
-  if (videoEl) {
-    let hasAutoplayed = false;
-
-    function tryAutoplay() {
-      if (hasAutoplayed) return;
-      hasAutoplayed = true;
-
-      // attempt unmuted play — works once user has interacted with the page
-      videoEl.muted = false;
-      const p = videoEl.play();
-
-      if (p !== undefined) {
-        p.catch(() => {
-          // browser blocked unmuted — fall back to muted autoplay
-          videoEl.muted = true;
-          videoEl.play().catch(() => {});
-
-          // unmute on next interaction
-          document.addEventListener("click",      () => { videoEl.muted = false; }, { once: true });
-          document.addEventListener("touchstart", () => { videoEl.muted = false; }, { once: true });
-        });
-      }
-    }
-
-    // Use IntersectionObserver as the trigger — it fires based on actual
-    // DOM visibility, not scroll-position math, so it's immune to the
-    // distortion caused by the pinned heal section above.
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            tryAutoplay();
-            observer.disconnect(); // one-shot
-          }
-        });
-      },
-      { threshold: 0.4 } // fire when 40% of the video frame is visible
-    );
-    observer.observe(document.querySelector(".video-frame"));
-  }
 }
 
 // refresh triggers once assets settle
