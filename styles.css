@@ -62,6 +62,26 @@ img { display: block; }
 .ellipse-md { width: min(384px, 26.67vw);  height: min(384px, 26.67vw);  top: min(462px, 32.08vw); }
 .ellipse-sm { width: min(155px, 10.76vw);  height: min(155px, 10.76vw);  top: min(576px, 40vw); }
 
+/* mobile ring override — JS sets --ring-top on .hero so all three rings
+   center on the exact pixel position of the center figure's head */
+@media (max-width: 560px) {
+  /* sizes: lg = 110vw, md = 52vw, sm = 22vw
+     top  = --ring-top  - half the ring height
+     so the ring's visual center lands on the head  */
+  .ellipse-lg {
+    width: 110vw; height: 110vw;
+    top: calc(var(--ring-top, 55vw) - 55vw);
+  }
+  .ellipse-md {
+    width: 52vw; height: 52vw;
+    top: calc(var(--ring-top, 55vw) - 26vw);
+  }
+  .ellipse-sm {
+    width: 22vw; height: 22vw;
+    top: calc(var(--ring-top, 55vw) - 11vw);
+  }
+}
+
 /* ============ NAV ============ */
 
 .nav {
@@ -229,14 +249,14 @@ img { display: block; }
   max-width: 640px;
   margin: 0 auto;
   text-align: center;
-  line-height: 1.3;
+  line-height: 1.45;
 }
 .section-sub {
   font-size: clamp(15px, 1.4vw, 18px);
   color: var(--muted);
   max-width: 480px;
-  margin-top: 18px;
-  line-height: 1.55;
+  margin: 36px auto 0;
+  line-height: 1.65;
 }
 
 /* pillars — asymmetric bento */
@@ -333,7 +353,7 @@ img { display: block; }
 
 /* audience line at the foot of the panel */
 .who-line {
-  margin-top: clamp(44px, 6vh, 64px);
+  margin-top: clamp(84px, 6vh, 64px);
   font-size: 15px;
   color: var(--muted);
   letter-spacing: 0.01em;
@@ -344,7 +364,7 @@ img { display: block; }
   font-style: italic;
   font-size: clamp(17px, 1.8vw, 20px);
   color: var(--ink);
-  margin-top: 6px;
+  margin-top: 16px;
 }
 
 /* ============ FOUNDERS ============ */
@@ -520,8 +540,6 @@ img { display: block; }
 
 /* ============ RESPONSIVE ============ */
 
-/* figures + rings scale fluidly via cqw/vw — no breakpoint overrides needed */
-
 @media (max-width: 960px) {
   .pillars { grid-template-columns: 1fr 1fr; }
   .pillar-understanding { grid-column: 1 / 3; grid-row: auto; min-height: 400px; }
@@ -531,6 +549,12 @@ img { display: block; }
 @media (max-width: 760px) {
   .founder-list { grid-template-columns: 1fr; gap: 48px; }
   .footer-base { flex-direction: column; gap: 20px; }
+
+  /* ---- figures: widen the container on tablet ---- */
+  .figures {
+    width: min(760px, 100vw);
+    aspect-ratio: 924 / 520;
+  }
 }
 
 @media (max-width: 560px) {
@@ -542,6 +566,123 @@ img { display: block; }
   .cta-btn { height: 42px; padding: 0 22px; }
   .cta-text { font-size: 15px; }
   .logo-img { height: 36px; }
+
+  /* ---- hero copy: tighten gap so figures have room ---- */
+  .hero-copy {
+    margin-top: clamp(60px, 10vh, 100px);
+  }
+
+  /* ---- tighten gap between figures and pillars section ---- */
+  .section {
+    padding-top: 0px;
+  }
+
+  /* ---- figures: grid layout — left+right top row, center bottom ---- */
+  .figures {
+    /* switch off absolute container sizing — use grid instead */
+    position: relative;
+    width: 100vw;
+    aspect-ratio: unset;
+    height: auto;
+    margin: 24px auto 0;
+    container-type: inline-size; /* keep cqw working for baseline */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    align-items: flex-end;
+    justify-items: center;
+    gap: 0;
+  }
+
+  /* pull all figures out of absolute so grid controls them */
+  .figure {
+    position: static;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  /* left stretch figure — top-left cell */
+  .figure-left {
+    grid-column: 1;
+    grid-row: 1;
+    width: 52%;
+    transform: none;
+    align-self: flex-end;
+  }
+
+  /* right eating figure — top-right cell */
+  .figure-right {
+    grid-column: 2;
+    grid-row: 1;
+    width: 46%;
+    transform: none;
+    align-self: flex-end;
+  }
+
+  /* center meditating figure — full-width row below */
+  .figure-center {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    width: 36%;
+    transform: none;
+    left: unset;
+    top: unset;
+    justify-self: center;
+    margin-top: -8px; /* tuck slightly under the top figures */
+  }
+
+  /* baseline — full-width row at the bottom */
+  .baseline {
+    grid-column: 1 / 3;
+    grid-row: 3;
+    position: static;
+    left: unset;
+    transform: none;
+    bottom: unset;
+    width: 92%;
+    height: auto;
+    margin-top: 2px;
+  }
+  .baseline img {
+    width: 100%;
+    height: auto;
+  }
+
+  /* ---- healing ripple: fill the screen on mobile ---- */
+
+  /* remove side padding so the SVG can breathe edge-to-edge */
+  .heal {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* stage stretches beyond viewport so the diagram fills it fully;
+     overflow is hidden on body so no horizontal scroll */
+  .heal-stage {
+    width: 85vw;
+  }
+
+  /* SVG text labels: in the zoomed viewBox (400 wide instead of 720)
+     the effective scale is ~1.8×, so we scale the font sizes down
+     proportionally to keep them from becoming too large */
+  .heal-label {
+    font-size: 18px;
+  }
+  .you-label {
+    font-size: 20px;
+  }
+
+  /* copy below the diagram */
+  .heal-copy {
+    padding: 0 24px;
+  }
+  .heal-line {
+    font-size: clamp(20px, 5.5vw, 28px);
+  }
+  .heal-line-em {
+    font-size: clamp(17px, 4.5vw, 22px);
+  }
 }
 
 /* ============ REDUCED MOTION ============ */
