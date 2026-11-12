@@ -218,12 +218,132 @@ if (prefersReduced) {
     scrollTrigger: { trigger: ".founder-list", start: "top 82%" },
   });
 
-  /* ---------- video placeholder ---------- */
+  /* ---------- video: scroll-reveal + one-time autoplay ---------- */
   gsap.from("[data-video]", {
     y: 60, autoAlpha: 0, duration: 0.9, ease: "power3.out",
     scrollTrigger: { trigger: ".video-frame", start: "top 85%" },
   });
+
+  const videoEl = document.querySelector(".video-el");
+  if (videoEl) {
+    let hasAutoplayed = false;
+
+    ScrollTrigger.create({
+      trigger: ".video-frame",
+      start: "top 80%",   // fires when video frame is 80% into viewport
+      onEnter: () => {
+        if (hasAutoplayed) return;
+        hasAutoplayed = true;
+
+        // attempt play with sound first (works if user has interacted with page)
+        videoEl.muted = false;
+        const playPromise = videoEl.play();
+
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // browser blocked unmuted autoplay — fall back to muted,
+            // then unmute as soon as the user taps/clicks anywhere once
+            videoEl.muted = true;
+            videoEl.play().catch(() => {});
+
+            const unmute = () => {
+              videoEl.muted = false;
+              document.removeEventListener("click",  unmute);
+              document.removeEventListener("touchstart", unmute);
+            };
+            document.addEventListener("click",      unmute, { once: true });
+            document.addEventListener("touchstart", unmute, { once: true });
+          });
+        }
+
+        // after the first full play-through, leave controls to the user
+        videoEl.addEventListener("ended", () => {
+          videoEl.controls = true;
+        }, { once: true });
+      },
+    });
+  }
 }
 
 // refresh triggers once assets settle
-window.addEventListener("load", () => ScrollTrigger.refresh());
+window.addEventListener("load", () => {
+  ScrollTrigger.refresh();
+  anchorRingsToFigure();
+});
+
+/* ---------- Ring anchor: lock the glow rings to the center figure's head ----------
+   On mobile the figures switch to a grid layout, so the center figure's
+   vertical position changes with screen height, font size, and device.
+   We measure it after render and write --ring-top onto .hero so the CSS
+   calc() rules place every ring's center exactly on the figure's head.
+   Re-runs on resize + orientation change so it's correct on every device. */
+function anchorRingsToFigure() {
+  const MOBILE_BP = 560;
+
+  const hero       = document.querySelector(".hero");
+  const figCenter  = document.querySelector(".figure-center");
+  const figCenterImg = figCenter ? figCenter.querySelector("img") : null;
+
+  if (!hero || !figCenter) return;
+
+  function update() {
+    if (window.innerWidth > MOBILE_BP) {
+      // desktop — clear any mobile override so desktop CSS takes over cleanly
+      hero.style.removeProperty("--ring-top");
+      return;
+    }
+
+    const heroRect   = hero.getBoundingClientRect();
+    const figRect    = figCenter.getBoundingClientRect();
+
+    // "head" = top 15% of the center figure's rendered height
+    // (the seated meditating figure has head at approx the top 15%)
+    const headY = figRect.top + figRect.height * 0.15;
+
+    // convert to offset from hero top (hero is position:relative)
+    const ringTop = headY - heroRect.top + window.scrollY;
+
+    hero.style.setProperty("--ring-top", ringTop + "px");
+  }
+
+  // run now, then again once images are loaded (heights may change)
+  update();
+  if (figCenterImg && !figCenterImg.complete) {
+    figCenterImg.addEventListener("load", update, { once: true });
+  }
+
+  // re-run on any resize or orientation flip
+  let rzt;
+  window.addEventListener("resize", () => {
+    clearTimeout(rzt);
+    rzt = setTimeout(update, 100);
+  });
+  window.addEventListener("orientationchange", () => setTimeout(update, 300));
+}
+
+anchorRingsToFigure();
+
+/* ---------- Healing SVG: tighten viewBox on mobile so the diagram fills the screen ----------
+   Original viewBox="0 0 720 460" has ~160px empty margin on each side.
+   On mobile we crop to just the diagram content (x:160–560, y:20–430)
+   making the circles appear ~1.8× larger without touching any coordinates. */
+(function () {
+  const svg = document.querySelector(".heal-svg");
+  if (!svg) return;
+
+  const MOBILE_VB  = "160 20 400 420";   // zoomed-in crop on mobile
+  const DESKTOP_VB = "0 0 720 460";      // original full canvas
+
+  function applyViewBox() {
+    svg.setAttribute("viewBox", window.innerWidth <= 560 ? MOBILE_VB : DESKTOP_VB);
+  }
+
+  applyViewBox();
+
+  // re-apply on resize (e.g. DevTools panel toggled)
+  let rzt;
+  window.addEventListener("resize", () => {
+    clearTimeout(rzt);
+    rzt = setTimeout(applyViewBox, 150);
+  });
+})();
