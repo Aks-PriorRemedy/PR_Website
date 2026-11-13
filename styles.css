@@ -6,7 +6,7 @@
    ============================================================ */
 
 :root {
-  --cream: #f6ebdc;
+  --cream: #f2ebde;
   --ink: #1d1d1d;
   --brown: #5b3002;
   --muted: #8a8276;
@@ -525,7 +525,6 @@ img { display: block; }
   border-radius: 28px;
   background: #fff;
   border: 1px solid rgba(91, 48, 2, 0.12);
-  box-shadow: 0 24px 60px -24px rgba(98, 50, 16, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
